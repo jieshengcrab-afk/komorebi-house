@@ -1,0 +1,74 @@
+<!doctype html>
+<html lang="zh-Hant">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width,initial-scale=1" />
+  <meta name="theme-color" content="#efece4" />
+  <meta name="description" content="木漏日旅行屋 — 一棟帶著櫻花與暖光出發的微型移動城堡。探索完整 360° 3D 建築、櫻花露台與日夜光影。" />
+  <meta property="og:title" content="木漏日旅行屋 · Komorebi House" />
+  <meta property="og:description" content="把日子，住成旅途。一座可環繞探索的 Three.js 微型建築。" />
+  <meta property="og:type" content="website" />
+  <meta property="og:image" content="./reference.png" />
+  <link rel="icon" href="./favicon.svg" type="image/svg+xml" />
+  <link rel="stylesheet" href="/fonts.css" />
+  <title>木漏日旅行屋 — Komorebi House</title>
+</head>
+<body>
+  <header class="masthead">
+    <a class="brand" href="./" aria-label="木漏日旅行屋 首頁"><svg viewBox="0 0 40 48" aria-hidden="true"><path d="M20 3 4 17h7v23h18V17h7L20 3Z M20 3v37 M11 26h18 M4 44h32"/><path d="m13 13 7-6 7 6M15 44v-4m10 4v-4"/></svg><span>KOMOREBI HOUSE<small>木漏日旅行屋 · MICRO ARCHITECTURE</small></span></a>
+    <div class="edition"><i></i> INTERACTIVE COLLECTION <span>—</span> NO. 001</div>
+    <button class="text-button" id="about-open">關於這座小屋 <span aria-hidden="true">↗</span></button>
+  </header>
+  <main>
+    <section class="intro" aria-label="作品介紹">
+      <p class="eyebrow"><span></span> THE ART OF SLOW WANDERING</p>
+      <h1>A little home.<br>A world of<br><em>possibilities.</em></h1>
+      <p class="intro-zh">把日子，住成旅途。</p>
+      <p class="description">櫻花開在屋頂，風穿過露台。<br>帶著一盞暖燈，往喜歡的方向走。</p>
+      <button class="explore-link" id="explore">環繞探索小屋 <span aria-hidden="true">↗</span></button>
+      <div class="material-notes"><span>胡桃木</span><span>石板瓦</span><span>黃銅</span><span>春櫻</span></div>
+    </section>
+    <section id="scene" aria-label="可旋轉的木漏日旅行屋 3D 模型" tabindex="0" aria-describedby="scene-help">
+      <div id="loading" role="status"><span class="loading-mark"></span><p>正在打開一扇通往春天的窗</p><small>BUILDING YOUR LITTLE WORLD</small></div>
+      <div id="fallback" hidden><img src="./reference.png" alt="櫻花、木造露台與黃銅輪式底盤的旅行屋參考圖" /><p>目前無法啟用 3D 顯示。請使用支援 WebGL 2 的瀏覽器，並開啟硬體加速。</p><button id="retry">重新載入</button></div>
+      <span class="scene-caption" id="scene-caption">01 / 全景 · THE LITTLE WANDERER</span>
+    </section>
+    <nav class="view-selector" aria-label="建築細節視角">
+      <span class="tiny-label">LOOK CLOSER</span>
+      <button data-view="roof"><span>01</span> 櫻花屋頂</button>
+      <button data-view="terrace"><span>02</span> 午後露台</button>
+      <button data-view="chassis"><span>03</span> 旅行底盤</button>
+      <button data-view="back"><span>04</span> 小屋背面</button>
+    </nav>
+    <aside class="tools" aria-label="場景工具">
+      <button id="orbit" aria-label="自動環繞" aria-pressed="false" title="自動環繞"><svg viewBox="0 0 24 24"><path d="M20 8a9 9 0 1 0 1 8M20 3v5h-5"/></svg></button>
+      <button id="home" aria-label="重設視角" title="重設視角"><svg viewBox="0 0 24 24"><path d="m3 11 9-8 9 8M6 10v10h12V10M10 20v-6h4v6"/></svg></button>
+      <button id="night" aria-label="切換夜景" aria-pressed="false" title="日夜切換"><svg viewBox="0 0 24 24"><path d="M20 14a8 8 0 0 1-10-10 8.5 8.5 0 1 0 10 10Z"/></svg></button>
+      <button id="petals" aria-label="櫻花飄落" aria-pressed="true" title="櫻花飄落"><svg viewBox="0 0 24 24"><path d="M12 11C1 4 7-2 12 6c5-8 11-2 0 5Zm0 0c12-3 12 6 4 5 6 7-2 11-4-5Zm0 0C1 9 0 17 8 16c-4 8 5 10 4-5Z"/></svg></button>
+      <button id="fullscreen" aria-label="全螢幕" title="全螢幕"><svg viewBox="0 0 24 24"><path d="M9 4H4v5m11-5h5v5M4 15v5h5m11-5v5h-5"/></svg></button>
+    </aside>
+    <section class="motion-dock" aria-label="小屋動態控制">
+      <div class="dock-heading"><span>旅行屋的日常</span><span id="mode-status" aria-live="polite">慢下來，也是一種前進。</span></div>
+      <div class="mode-buttons">
+        <button id="mode-stand" data-mode="stand" aria-pressed="true"><svg viewBox="0 0 24 24"><path d="M7 4v16M17 4v16M4 4h6M14 4h6M4 20h6m4 0h6"/></svg><span>靜靜佇立<small>STAND</small></span></button>
+        <button id="mode-walk" data-mode="walk" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="m3 13 5-3 4 3 4-3 5 3M3 18l5-3 4 3 4-3 5 3M7 5h10"/></svg><span>緩緩旅行<small>WANDER</small></span></button>
+        <button id="mode-rest" data-mode="rest" aria-pressed="false"><svg viewBox="0 0 24 24"><path d="M19 15A8 8 0 0 1 9 5a8 8 0 1 0 10 10Z"/></svg><span>好好歇息<small>REST</small></span></button>
+      </div>
+    </section>
+    <p id="scene-help" class="scene-help">拖曳旋轉 <span>·</span> 滾輪縮放 <span>·</span> 方向鍵環繞</p>
+  </main>
+  <footer><span>A SMALL HOME. A SLOWER LIFE.</span><span id="time-label">春日 · 16:30</span><span>CRAFTED IN THREE DIMENSIONS <i>✧</i></span></footer>
+  <dialog id="about-dialog" aria-labelledby="about-title">
+    <button id="about-close" class="dialog-close" aria-label="關閉">×</button>
+    <p class="eyebrow">THE LITTLE WANDERER / 001</p>
+    <h2 id="about-title">住在風景裡，<br>也成為風景。</h2>
+    <p>木漏日，是陽光穿過樹葉時灑下的光。這棟小屋把木造建築、櫻花露台與黃銅輪式底盤收進一個微型世界，讓家的邊界隨風移動。</p>
+    <img src="./reference.png" alt="本作品的 AI 生成概念參考圖" loading="lazy" />
+    <p class="small">上圖為概念參考；展示場景以 Three.js 程序化建模，不是平面圖片。原圖未呈現的背面與側面依相同建築語彙補建。作品為藝術展示，非可施工建築。</p>
+    <div class="dialog-meta"><span>DESIGN STUDY</span><span>REAL-TIME · 360°</span></div>
+  </dialog>
+  <div id="notice" role="status" aria-live="polite"></div>
+  <noscript><p class="noscript">請啟用 JavaScript 以探索 3D 場景。</p></noscript>
+  <script type="module" src="./src/main.js"></script>
+</body>
+</html>
