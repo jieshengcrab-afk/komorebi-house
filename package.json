@@ -4,9 +4,9 @@
   "private": true,
   "type": "module",
   "scripts": {
-    "dev": "vite --host 127.0.0.1 --port 5178 --strictPort",
+    "dev": "vite --host 127.0.0.1 --port 5182 --strictPort",
     "build": "vite build --base=./",
-    "preview": "vite preview --host 127.0.0.1 --port 4178 --strictPort",
+    "preview": "vite preview --host 127.0.0.1 --port 4182 --strictPort",
     "test": "node --test tests/*.test.js",
     "test:e2e": "playwright test"
   },

@@ -11,7 +11,7 @@ npm ci
 npm run dev
 ```
 
-Open http://127.0.0.1:5178/ . The server binds only to loopback.
+Open http://127.0.0.1:5182/ . The server binds only to loopback. Production preview uses port 4182.
 
 ## Build / deploy
 
@@ -22,7 +22,7 @@ npm run preview
 
 The `dist/` directory is the static site. Upload **its contents** to any HTTPS static host. No backend, API credentials, runtime CDN, tracking, or cookies are required. Relative asset URLs support a subdirectory deployment. Serve through HTTP(S), not `file://`.
 
-Actual public deployment and domain choice require the owner's approval. Before deploying to a chosen domain, set the Open Graph image to the absolute deployed `/reference.png` URL for the most reliable social-card crawlers.
+Public site: https://jieshengcrab-afk.github.io/komorebi-house/ . Pushes to main deploy through GitHub Actions, as authorized by the owner. The share card uses an actual rendered screenshot, not the concept image.
 
 ## Controls
 
@@ -39,9 +39,10 @@ Actual public deployment and domain choice require the owner's approval. Before 
 ## Source map
 
 - `src/house.js`: volumetric architecture, materials, foliage and wheels.
-- `src/main.js`: lighting, camera, animation loop, garden, interaction and graceful failure.
+- `src/main.js`: camera, on-demand rendering, interaction and graceful failure.
+- `src/studio.js`: studio lighting, ground, GTAO contact shading, bloom and tone mapping.
 - `src/state.js`: pure UI state transitions.
-- `src/style.css`: responsive editorial layout and themes.
+- `src/atelier.css`: current model-first layout and themes (`style.css` preserves the first design).
 - `public/reference.png`: AI-generated concept image supplied in this conversation.
 - `public/fonts/`: self-hosted Cormorant Garamond and Noto Serif TC subsets, with OFL notices.
 - `scripts/fetch_fonts.py`: explicit optional font-refresh utility; not needed at runtime.
@@ -57,5 +58,7 @@ npm audit
 ```
 
 Browser automation captures day, night, roof, rear, and mobile screenshots in `test-results/`. It checks real WebGL rendering, controls, wheel animation, camera orbit/zoom, mobile overflow, reduced motion, no off-origin dependencies, and the no-WebGL fallback. `window.__gallery.getDiagnostics()` exposes read-only scene counters for inspection.
+
+`node scripts/verify-live.mjs <url> <output-directory>` additionally checks the deployed revision, console/shader errors, HTTP errors, screenshots and controls on desktop, tablet and phones. Current revision: `reference-rebuild-2`.
 
 The frame rate is hardware-dependent; automated tests using SwiftShader measure software rendering, not the user's GPU. A procedural reconstruction from one view cannot establish engineering correctness or unseen original geometry. This is an artistic architectural exhibit, not construction documentation.

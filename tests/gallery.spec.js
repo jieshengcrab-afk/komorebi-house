@@ -2,12 +2,14 @@ import { test, expect } from '@playwright/test';
 test('real WebGL gallery loads with navigable scene', async ({ page }) => {
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
+  page.on('console', message => { if (message.type() === 'error') errors.push(message.text()); });
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
   await expect(page.locator('#scene canvas')).toBeVisible();
   await expect(page.locator('#scene canvas')).toHaveCSS('opacity', '1');
   await expect(page.locator('#mode-stand')).toHaveAttribute('aria-pressed', 'true');
   const info = await page.evaluate(() => window.__gallery.getDiagnostics());
+  expect(info.revision).toBe('reference-rebuild-2');
   expect(info.triangles).toBeGreaterThan(1000);
   expect(info.meshes).toBeGreaterThan(5);
   expect(errors).toEqual([]);
@@ -15,6 +17,9 @@ test('real WebGL gallery loads with navigable scene', async ({ page }) => {
 });
 
 test('day/night, movement, detail views, orbit and reset work', async ({ page }) => {
+  // Assert all state paths without waiting for cosmetic transitions in software WebGL.
+  // Normal-motion transitions remain exercised by the separate mobile scenario.
+  await page.emulateMedia({ reducedMotion: 'reduce' });
   const errors = [];
   page.on('pageerror', error => errors.push(error.message));
   await page.goto('/');
@@ -44,7 +49,7 @@ test('day/night, movement, detail views, orbit and reset work', async ({ page })
   await expect(page.locator('#orbit')).toHaveAttribute('aria-pressed', 'false');
   await expect.poll(() => page.evaluate(() => window.__gallery.getDiagnostics().state.view)).toBe('home');
   await page.locator('#petals').click();
-  await expect(page.locator('#petals')).toHaveAttribute('aria-pressed', 'false');
+  await expect(page.locator('#petals')).toHaveAttribute('aria-pressed', 'true');
   await page.locator('#about-open').click();
   await expect(page.locator('#about-dialog')).toBeVisible();
   await page.keyboard.press('Escape');
@@ -90,7 +95,7 @@ test('mobile controls stay usable without horizontal overflow', async ({ page })
 test('reduced motion is respected and no off-origin requests are needed', async ({ page }) => {
   await page.emulateMedia({ reducedMotion: 'reduce' });
   const external = [];
-  page.on('request', request => { if (!request.url().startsWith('http://127.0.0.1:5178') && !request.url().startsWith('data:')) external.push(request.url()); });
+  page.on('request', request => { if (!request.url().startsWith('http://127.0.0.1:5182') && !request.url().startsWith('data:')) external.push(request.url()); });
   await page.goto('/');
   await expect(page.locator('body')).toHaveAttribute('data-ready', 'true');
   await expect(page.locator('#petals')).toHaveAttribute('aria-pressed', 'false');
