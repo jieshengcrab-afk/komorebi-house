@@ -3,10 +3,11 @@ import * as THREE from 'three';
 import { OrbitControls } from 'three/addons/controls/OrbitControls.js';
 import { createStudio } from './studio.js';
 import { initialState, transition } from './state.js';
+import { createPetalField, createLocomotion } from './motion.js';
 
 const $ = selector => document.querySelector(selector);
 const reducedMotion = matchMedia('(prefers-reduced-motion: reduce)').matches;
-let state = { ...initialState(reducedMotion), petals: false };
+let state = initialState(reducedMotion);
 let renderer, controls, camera, scene, house, frame = 0;
 let noticeTimer;
 function notice(text) {
@@ -65,20 +66,27 @@ async function init() {
   let seed = 73;
   const random = () => { seed = (seed * 1664525 + 1013904223) >>> 0; return seed / 4294967296; };
 
-  const petalCount = matchMedia('(max-width:700px)').matches ? 55 : 110;
-  const petalGeo = new THREE.SphereGeometry(1, 6, 4);
-  const petalMat = new THREE.MeshStandardMaterial({ color: 0xe8acb7, roughness: 0.83, side: THREE.DoubleSide });
-  const petals = new THREE.InstancedMesh(petalGeo, petalMat, petalCount);
-  const petalData = Array.from({ length: petalCount }, () => ({ x: (random() - 0.5) * 8, z: (random() - 0.5) * 7, y: random() * 8, speed: 0.16 + random() * 0.3, phase: random() * Math.PI * 2 }));
-  const transform = new THREE.Object3D(); scene.add(petals); petals.frustumCulled = false;
-  // A few petals rest on the plinth even when motion is disabled.
-  const fallen = new THREE.InstancedMesh(petalGeo, petalMat, 65);
-  for (let i = 0; i < 65; i++) {
+  // Graceful falling sakura: petals originate in the blossom canopy and drift
+  // down under gravity with flutter, tumble and recycling (see src/motion.js).
+  const petalCount = matchMedia('(max-width:700px)').matches ? 70 : 130;
+  const petalField = createPetalField(THREE, { count: petalCount, seed: 4177 });
+  scene.add(petalField.mesh);
+  // A few petals rest on the plinth as permanent ground detail (static).
+  const restGeo = new THREE.PlaneGeometry(1, 1.3);
+  const restMat = new THREE.MeshStandardMaterial({ color: 0xecb3c2, roughness: 0.85, side: THREE.DoubleSide });
+  const fallen = new THREE.InstancedMesh(restGeo, restMat, 60);
+  const restDummy = new THREE.Object3D();
+  for (let i = 0; i < 60; i++) {
     const a = random() * Math.PI * 2, r = 2.7 + random() * 2.7;
-    transform.position.set(Math.cos(a) * r, 0.012, Math.sin(a) * r);
-    transform.rotation.set(0, random() * Math.PI, 0); transform.scale.set(0.034, 0.008, 0.019); transform.updateMatrix(); fallen.setMatrixAt(i, transform.matrix);
+    restDummy.position.set(Math.cos(a) * r, 0.011, Math.sin(a) * r);
+    restDummy.rotation.set(-Math.PI / 2, 0, random() * Math.PI);
+    restDummy.scale.setScalar(0.05 + random() * 0.03);
+    restDummy.updateMatrix(); fallen.setMatrixAt(i, restDummy.matrix);
   }
-  scene.add(fallen);
+  fallen.name = 'fallen-sakura-petals'; scene.add(fallen);
+  // Locomotion integrator: eased velocity + honest travelled distance so the
+  // wheels roll in lock-step with ground travel (no slide, smooth start/stop).
+  const locomotion = createLocomotion();
   let tween = null;
   const presets = {
     home: { position: [-5.5, 6.3, 22.5], target: [-0.35, 3.8, 0], caption: '01 / 全景 · THE LITTLE WANDERER' },
@@ -112,7 +120,7 @@ async function init() {
     $('#mode-status').textContent = { stand: '慢下來，也是一種前進。', walk: '讓風景，慢慢走進日常。', rest: '晚安，把星光留在窗邊。' }[state.mode];
     $('#time-label').textContent = state.night ? '春夜 · 20:30' : '春日 · 16:30';
     controls.autoRotate = state.orbit;
-    petals.visible = state.petals;
+    petalField.mesh.visible = state.petals;
   }
   document.querySelectorAll('[data-mode]').forEach(button => button.addEventListener('click', () => {
     state = transition(state, 'mode', button.dataset.mode);
@@ -164,7 +172,7 @@ async function init() {
   let frames = 0, accumulatedTime = 0, measuredFps = 0;
   let meshes = 0; house.group.traverse(object => { if (object.isMesh) meshes++; });
   window.__gallery = {
-    getDiagnostics: () => ({ revision: 'reference-rebuild-2', materialRevision: 'pbr-detail-3', state: { ...state }, meshes, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls, fps: Math.round(measuredFps), camera: camera.position.toArray(), target: controls.target.toArray(), nightFactor, wheels: house.wheels.map(wheel => wheel.rotation.toArray()), webgl: renderer.capabilities.isWebGL2 ? 2 : 'unknown', canvasSize: [renderer.domElement.width, renderer.domElement.height] })
+    getDiagnostics: () => ({ revision: 'reference-rebuild-2', materialRevision: 'pbr-detail-3', state: { ...state }, meshes, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls, fps: Math.round(measuredFps), camera: camera.position.toArray(), target: controls.target.toArray(), nightFactor, wheels: house.wheels.map(wheel => wheel.rotation.toArray()), locomotion: { velocity: +locomotion.state.velocity.toFixed(4), distance: +locomotion.state.distance.toFixed(4), roll: +locomotion.state.roll.toFixed(4) }, petals: petalField.diagnostics(), webgl: renderer.capabilities.isWebGL2 ? 2 : 'unknown', canvasSize: [renderer.domElement.width, renderer.domElement.height] })
   };
   function render(now) {
     frame = requestAnimationFrame(render);
@@ -182,21 +190,27 @@ async function init() {
       camera.position.lerpVectors(tween.from, tween.to, t); controls.target.lerpVectors(tween.fromTarget, tween.toTarget, t);
       if (raw === 1) tween = null;
     }
-    const speed = state.mode === 'walk' ? 0.6 : 0;
-    if (speed) movingTime += dt;
-    house.update(movingTime, speed);
-    if (speed || Math.abs(house.group.position.y) > 0.0001) renderer.shadowMap.needsUpdate = true;
-    if (state.petals) {
-      for (let i = 0; i < petalCount; i++) {
-        const p = petalData[i], t = simulationTime;
-        transform.position.set(p.x + Math.sin(t * 0.24 + p.phase) * 0.5, (p.y - t * p.speed % 8 + 8) % 8, p.z + Math.cos(t * 0.2 + p.phase) * 0.5);
-        transform.rotation.set(t * 0.7 + p.phase, t * 0.5, t + p.phase);
-        transform.scale.set(0.045, 0.008, 0.025); transform.updateMatrix(); petals.setMatrixAt(i, transform.matrix);
-      }
-      petals.instanceMatrix.needsUpdate = true;
+    const targetSpeed = state.mode === 'walk' ? 0.6 : 0;
+    // Integrate bounded wall time in small steps: slow GPUs must not stretch
+    // a short braking transition into tens of seconds.
+    let remaining = Math.min(elapsed, 2);
+    let loco = locomotion.state;
+    while (remaining > 0) {
+      const step = Math.min(remaining, 0.05);
+      loco = locomotion.update(step, targetSpeed, reducedMotion);
+      remaining -= step;
+    }
+    if (loco.velocity > 2e-3) movingTime += dt;
+    // Feed the house the eased velocity and honestly-integrated travel distance
+    // so wheels roll in lock-step (no slide) and start/stop is smooth.
+    house.update(loco.movingTime, loco.velocity, loco.distance);
+    const moving = loco.velocity > 2e-3;
+    if (moving || Math.abs(house.group.position.y) > 0.0001) renderer.shadowMap.needsUpdate = true;
+    if (state.petals && !reducedMotion) {
+      petalField.update(dt);
     }
     const cameraChanged = controls.update(dt);
-    if (needsRender || cameraChanged || tween || state.orbit || state.petals || speed || Math.abs(nightFactor-(state.night?1:0))>.001) {
+    if (needsRender || cameraChanged || tween || state.orbit || (state.petals && !reducedMotion) || moving || Math.abs(nightFactor-(state.night?1:0))>.001) {
       studio.render(dt); needsRender = false;
     }
   }

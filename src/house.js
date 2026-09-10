@@ -89,7 +89,10 @@ export function createHouse() {
   }
   const wheels=[];
   for (const x of [-1.82,1.82]) for (const z of [-1.12,1.12]) {
-    const w=groupNamed(under,'wheel'); w.position.set(x,.48,z); w.rotation.y=-.65;
+    // Wheel axis MUST align with the axle (world X). Any steer (rotation.y) here
+    // would make the spin axis (X) diverge from the disc normal and the tire
+    // would visibly precess/wobble while rolling. Keep it dead-on the axle.
+    const w=groupNamed(under,'wheel'); w.position.set(x,.48,z);
     cylinder(w,'heavy-iron-tire',.49,.49,.27,[0,0,0],mat.ironEdge,28,[0,0,PI/2]);
     cylinder(w,'bronze-wheel-face',.39,.39,.285,[0,0,0],mat.bronze,24,[0,0,PI/2]);
     torus(w,'raised-metal-rim',.345,.035,[x>0?.15:-.15,0,0],mat.brass,[0,PI/2,0],7,28);
@@ -431,9 +434,22 @@ export function createHouse() {
 
   group.traverse(o=>{if(o.isMesh){o.castShadow=true;o.receiveShadow=true;}});
   const baseY=group.position.y;
-  function update(time,speed=0){
-    const t=Number.isFinite(time)?time:0, pace=Math.max(0,Number.isFinite(speed)?speed:0), roll=pace===0?0:-t*(1.25+pace*1.4);
+  const WHEEL_RADIUS=0.49;
+  // update(time, speed, distance?)
+  //  - Pure function of its arguments so headless tests stay deterministic.
+  //  - Wheel roll = -travelledDistance / wheelRadius, so tires never slide.
+  //    When the caller integrates an eased velocity it passes the real
+  //    `distance`; otherwise we fall back to speed*time (constant-velocity),
+  //    which keeps the 2-arg contract deterministic.
+  //  - Only the rolling wheel groups spin; axles, springs, hangers and other
+  //    decorative supports live in the parent undercarriage and stay still.
+  function update(time,speed=0,distance){
+    const t=Number.isFinite(time)?time:0;
+    const pace=Math.max(0,Number.isFinite(speed)?speed:0);
+    const travelled=Number.isFinite(distance)?distance:pace*t;
+    const roll=-travelled/WHEEL_RADIUS;
     wheels.forEach(w=>{w.rotation.x=roll;});
+    // Body bob/sway scales with pace so a stopped house is perfectly still.
     group.position.y=baseY+(pace===0?0:Math.sin(t*(3.1+pace))*.022*Math.min(pace,2));
     group.rotation.z=pace===0?0:Math.sin(t*1.65)*.004*Math.min(pace,2);
   }
