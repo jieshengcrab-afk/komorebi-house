@@ -18,6 +18,9 @@ try {
     await page.evaluate(()=>document.fonts.ready);
     const diagnostics=await page.evaluate(()=>window.__gallery.getDiagnostics());
     assert.equal(diagnostics.revision,'reference-rebuild-2');
+
+    const materialRevision = await page.evaluate(() => window.__gallery.getDiagnostics().materialRevision);
+    assert.equal(materialRevision, 'pbr-detail-3');
     assert.ok(diagnostics.triangles>10000); assert.ok(diagnostics.meshes>10);
     assert.equal(await page.evaluate(()=>document.documentElement.scrollWidth>innerWidth),false);
     await page.screenshot({path:`${output}/day-${width}.png`,fullPage:true});

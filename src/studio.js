@@ -17,10 +17,11 @@ export function createStudio(renderer, scene, camera) {
   room.dispose(); pmrem.dispose();
   const hemi = new THREE.HemisphereLight(0xfff2dc, 0x827566, 0.95);
   const key = new THREE.DirectionalLight(0xffe6c2, 3.0);
-  key.position.set(-5, 11, 7); key.castShadow = true;
-  key.shadow.mapSize.set(2048, 2048);
+  key.position.set(-7, 9, 5); key.castShadow = true;
+  key.shadow.mapSize.set(4096, 4096);
   Object.assign(key.shadow.camera, { left: -9, right: 9, top: 11, bottom: -7, near: 0.5, far: 35 });
-  key.shadow.normalBias = 0.016; key.shadow.bias = -0.00012;
+  key.shadow.normalBias = 0.004; key.shadow.bias = -0.00003;
+  key.shadow.radius = 6; key.shadow.blurSamples = 8;
   const fill = new THREE.DirectionalLight(0xffefe0, 0.6); fill.position.set(7, 5, 4);
   const rim = new THREE.DirectionalLight(0xffefd1, 1.7); rim.position.set(3, 9, -5);
   scene.add(hemi, key, fill, rim);
@@ -79,11 +80,11 @@ export function createStudio(renderer, scene, camera) {
     setNight(t) {
       scene.background.copy(day).lerp(night,t); scene.fog.color.copy(scene.background);
       floorMaterial.color.set(0xe4d6c4).lerp(new THREE.Color(0x293942),t);
-      hemi.intensity=THREE.MathUtils.lerp(.95,.38,t); key.intensity=THREE.MathUtils.lerp(3,.25,t);
-      key.color.set(0xffe6c2).lerp(new THREE.Color(0x99bfd9),t);
-      fill.intensity=THREE.MathUtils.lerp(.6,.18,t); rim.intensity=THREE.MathUtils.lerp(1.7,1.1,t);
+      hemi.intensity=THREE.MathUtils.lerp(.32,.26,t); key.intensity=THREE.MathUtils.lerp(3.5,.25,t);
+      key.color.set(0xffdda9).lerp(new THREE.Color(0x99bfd9),t);
+      fill.intensity=THREE.MathUtils.lerp(.12,.12,t); rim.intensity=THREE.MathUtils.lerp(1.5,1.1,t);
       rim.color.set(0xffefd1).lerp(new THREE.Color(0x98bed8),t);
-      scene.environmentIntensity=THREE.MathUtils.lerp(.55,.22,t);
+      scene.environmentIntensity=THREE.MathUtils.lerp(.35,.20,t);
       glowLights.forEach(light => { light.intensity=THREE.MathUtils.lerp(.3,3.2,t); });
       bloom.strength=THREE.MathUtils.lerp(.13,.25,t);
     },

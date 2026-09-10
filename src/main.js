@@ -36,7 +36,7 @@ async function init() {
   renderer.setPixelRatio(Math.min(window.devicePixelRatio, matchMedia('(max-width:700px)').matches ? 1.5 : 2));
   renderer.setClearColor(0xefece4, 0);
   renderer.shadowMap.enabled = true;
-  renderer.shadowMap.type = THREE.PCFSoftShadowMap;
+  renderer.shadowMap.type = THREE.VSMShadowMap;
   renderer.shadowMap.autoUpdate = false;
   renderer.shadowMap.needsUpdate = true;
   renderer.toneMapping = THREE.ACESFilmicToneMapping;
@@ -164,7 +164,7 @@ async function init() {
   let frames = 0, accumulatedTime = 0, measuredFps = 0;
   let meshes = 0; house.group.traverse(object => { if (object.isMesh) meshes++; });
   window.__gallery = {
-    getDiagnostics: () => ({ revision: 'reference-rebuild-2', state: { ...state }, meshes, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls, fps: Math.round(measuredFps), camera: camera.position.toArray(), target: controls.target.toArray(), nightFactor, wheels: house.wheels.map(wheel => wheel.rotation.toArray()), webgl: renderer.capabilities.isWebGL2 ? 2 : 'unknown', canvasSize: [renderer.domElement.width, renderer.domElement.height] })
+    getDiagnostics: () => ({ revision: 'reference-rebuild-2', materialRevision: 'pbr-detail-3', state: { ...state }, meshes, triangles: renderer.info.render.triangles, calls: renderer.info.render.calls, fps: Math.round(measuredFps), camera: camera.position.toArray(), target: controls.target.toArray(), nightFactor, wheels: house.wheels.map(wheel => wheel.rotation.toArray()), webgl: renderer.capabilities.isWebGL2 ? 2 : 'unknown', canvasSize: [renderer.domElement.width, renderer.domElement.height] })
   };
   function render(now) {
     frame = requestAnimationFrame(render);

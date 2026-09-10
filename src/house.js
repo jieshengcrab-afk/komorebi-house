@@ -1,6 +1,7 @@
 import * as THREE from 'three';
 import { mergeGeometries } from 'three/addons/utils/BufferGeometryUtils.js';
 import { RoundedBoxGeometry } from 'three/addons/geometries/RoundedBoxGeometry.js';
+import { enhanceMaterials, cloneEnhanced } from './materials.js';
 
 const PI = Math.PI;
 const Y_AXIS = new THREE.Vector3(0, 1, 0);
@@ -42,30 +43,12 @@ export function createHouse() {
   };
   const windowMaterials = [mat.glass, mat.glassSoft];
 
-  // Deterministic subtle surface wear. Node tests intentionally skip DOM textures.
-  if (typeof document !== 'undefined') {
-    const makeTexture = (wood) => {
-      const c = document.createElement('canvas'); c.width = c.height = 256;
-      const x = c.getContext('2d'); let seed = wood ? 711 : 912;
-      const rnd = () => ((seed = (seed * 1664525 + 1013904223) >>> 0) / 4294967296);
-      x.fillStyle = wood ? '#cdb79c' : '#efe9dc'; x.fillRect(0, 0, 256, 256);
-      if (wood) {
-        for (let i = 0; i < 330; i++) {
-          const yy = rnd() * 256, a = .06 + rnd() * .22;
-          x.strokeStyle = `rgba(31,16,9,${a})`; x.lineWidth = .3 + rnd() * 1.2;
-          x.beginPath(); x.moveTo(0, yy); x.bezierCurveTo(70, yy + rnd()*6-3, 170, yy+rnd()*8-4, 256, yy+rnd()*5-2.5); x.stroke();
-        }
-        for (let i = 0; i < 24; i++) { x.strokeStyle='rgba(235,205,161,.09)'; x.strokeRect(rnd()*250,rnd()*250,3+rnd()*12,1+rnd()*3); }
-      } else {
-        for (let i=0;i<6000;i++){ const v=Math.floor(rnd()*30); x.fillStyle=`rgba(${65+v},${54+v},${40+v},${rnd()*.08})`; x.fillRect(rnd()*256,rnd()*256,1,1); }
-      }
-      const t = new THREE.CanvasTexture(c); t.colorSpace = THREE.SRGBColorSpace; t.wrapS=t.wrapT=THREE.RepeatWrapping; t.anisotropy=8; return t;
-    };
-    const wood = makeTexture(true), masonry = makeTexture(false);
-    wood.repeat.set(3, 2); masonry.repeat.set(3, 3);
-    for (const m of [mat.walnut,mat.walnutDark,mat.walnutEdge]) { m.map=wood; m.bumpMap=wood; m.bumpScale=.018; }
-    for (const m of [mat.plaster,mat.brick,mat.brickLight,mat.brickWarm]) { m.map=masonry; m.bumpMap=masonry; m.bumpScale=.025; }
-  }
+  // Physically-based procedural surface detail (grain, tarnish, chips, speckle).
+  // Implemented as object/world-space triplanar GLSL in src/materials.js via
+  // onBeforeCompile: no CanvasTexture, no `document`, texel-consistent across
+  // merged and instanced/scaled geometry, and safe under headless Node tests.
+  // Must run before any material is cloned below so clones inherit the shader.
+  enhanceMaterials(mat);
 
   const unitBox = new THREE.BoxGeometry(1,1,1);
   const roundedBox = new RoundedBoxGeometry(1,1,1,2,.09);
@@ -149,7 +132,10 @@ export function createHouse() {
     const x=-2.30+col*.42+(row%2)*.205, y=1.51+row*.195;
     if(x<2.42&&!blocked(x,y)) brickPositions.push([x,y,1.335,(row+col)%3]);
   }
-  const masonryMaterial = mat.brickLight.clone(); masonryMaterial.color.set(0xffffff);
+  // MeshStandardMaterial.clone() drops onBeforeCompile/customProgramCacheKey, so
+  // a raw clone here would render flat, un-enhanced masonry. cloneEnhanced()
+  // re-attaches the MASONRY procedural detail from the surviving userData.
+  const masonryMaterial = cloneEnhanced(mat.brickLight); masonryMaterial.color.set(0xffffff);
   const bricks=new THREE.InstancedMesh(brickGeo,masonryMaterial,brickPositions.length); bricks.name='individual-masonry-bricks';
   brickPositions.forEach((p,i)=>{ dummy.position.set(p[0],p[1],p[2]); dummy.rotation.set(0,0,(random()-.5)*.025); dummy.scale.set(.92+random()*.12,.9+random()*.1,1); dummy.updateMatrix(); bricks.setMatrixAt(i,dummy.matrix); bricks.setColorAt(i,new THREE.Color([0xc5b596,0xd7c8a9,0xab997c][p[3]])); }); ground.add(bricks);
   const wrap = new THREE.InstancedMesh(brickGeo,masonryMaterial,550); wrap.name='side-and-rear-masonry'; let wi=0;
