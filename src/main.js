@@ -103,7 +103,9 @@ async function init() {
     if (container.clientWidth <= 900) {
       const widthToFit = ['home','back'].includes(state.view) ? 7.5 : 5.4;
       const fitDistance = widthToFit / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * camera.aspect * .82);
-      position.sub(target).setLength(Math.max(position.distanceTo(new THREE.Vector3()), fitDistance)).add(target);
+      const heightToFit = ['home','back'].includes(state.view) ? 9.6 : 5.6;
+      const heightDistance = heightToFit / (2 * Math.tan(THREE.MathUtils.degToRad(camera.fov / 2)) * .9);
+      position.sub(target).setLength(Math.max(position.length(), fitDistance, heightDistance)).add(target);
     }
     tween = { start: performance.now(), from: camera.position.clone(), to: position, fromTarget: controls.target.clone(), toTarget: target };
     if (immediate || reducedMotion) { camera.position.copy(position); controls.target.copy(target); tween = null; }
@@ -166,7 +168,12 @@ async function init() {
     else camera.clearViewOffset();
     camera.updateProjectionMatrix(); renderer.setSize(width, height); studio.resize(width,height);
   };
-  new ResizeObserver(resize).observe(container); resize(); goToView('home', true); updateUI();
+  const updateControlSpace = () => {
+    document.documentElement.style.setProperty('--controls-height', `${Math.ceil(document.querySelector('.controls').getBoundingClientRect().height)}px`);
+  };
+  new ResizeObserver(updateControlSpace).observe(document.querySelector('.controls'));
+  updateControlSpace();
+  new ResizeObserver(() => { resize(); goToView(state.view, true); }).observe(container); resize(); goToView('home', true); updateUI();
 
   let nightFactor = 0, lastTime = performance.now(), simulationTime = 0, movingTime = 0;
   let frames = 0, accumulatedTime = 0, measuredFps = 0;

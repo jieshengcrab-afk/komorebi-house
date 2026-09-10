@@ -201,6 +201,9 @@ body.night .explore-link:hover{color:var(--accent)}
 
 /* ---- Mobile / tablet / short-landscape: bottom sheet ------------------- */
 @media(max-width:900px){
+  #scene{top:80px;bottom:var(--controls-height,210px)}
+  .mode-buttons button{padding:8px 4px!important;white-space:nowrap;gap:4px!important}
+  .mode-buttons button svg{display:none}
   .masthead{padding:14px clamp(14px,4vw,24px)}
   .brand span{font-size:17px;letter-spacing:1.5px}
   .brand small{font-size:10px;letter-spacing:1.5px}
@@ -242,7 +245,7 @@ body.night .explore-link:hover{color:var(--accent)}
   .mode-buttons button span{font-size:14px}
 
   /* Caption anchored top, help hidden (touch has no arrow keys) */
-  .scene-caption{top:64px;bottom:auto;left:50%;font-size:13px}
+  .scene-caption{display:none}
   .scene-help{display:none}
   footer{display:none}
 
